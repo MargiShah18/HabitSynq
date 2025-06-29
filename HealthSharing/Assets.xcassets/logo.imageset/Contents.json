@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "ChatGPT_Image_Jun_27__2025__05_42_25_PM-removebg-preview (1).png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
