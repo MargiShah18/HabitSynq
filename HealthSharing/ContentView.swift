@@ -47,7 +47,7 @@ struct ContentView: View {
                         .foregroundColor(Color.white.opacity(0.8))
                     
                     
-                }.offset(y:-160)
+                }.offset(y:-120)
                 
                 VStack{
                     HStack(spacing:50){
