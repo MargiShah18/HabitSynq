@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var showingLoginScreen = false
     @State private var showingSignupScreen = false
     @State private var isAuthenticated = false
-    @State private var animateLogo = false
+   
     
     var body: some View {
         NavigationStack {

@@ -9,29 +9,41 @@ import Foundation
 import SwiftUI
 
 struct LoggedInHomeView: View {
+    @State private var showAddHabit = false
+    
     var body: some View {
         VStack(spacing:0){
-            HStack{
+            ZStack{
                 Text("My Habits")
-                Spacer()
-                Button(action:{
-                    //Add action here
-                })
-                {
-                    Image(systemName: "plus")
-                        .foregroundColor(.blue)
-                        .imageScale(.large)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                HStack{
+                    Spacer()
+                    Button(action:{
+                        showAddHabit = true
+                    })
+                    {
+                        Image(systemName: "plus")
+                            .foregroundColor(.white)
+                            .imageScale(.large)
+                    }
                 }
             }
             .padding()
-            .background(Color.white)
+            .background(Color.blue)
             
             Spacer()
-            Text("welcome to loggein page")
+            Text("Add a habit and get started!")
             Spacer()
+            FooterBar()
             
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color.blue.opacity(0.25))
+        .ignoresSafeArea(.container, edges: .bottom)
+        .fullScreenCover(isPresented: $showAddHabit) {
+            AddHabitView()
+        }
     }
 }
 #Preview{
