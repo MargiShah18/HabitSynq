@@ -7,6 +7,8 @@
 
 import Foundation
 import SwiftUI
+import FirebaseFirestore
+import FirebaseAuth
 
 struct AddHabitView: View {
     @State private var habitTitle: String = ""
@@ -18,7 +20,7 @@ struct AddHabitView: View {
     let frequencyOptions = ["Daily", "Specific Days", "Weekly", "Monthly"]
     
     var body: some View {
-        VStack(spacing:0){
+        VStack(alignment: .leading, spacing:6){
             ZStack{
                 Text("Add Habit")
                     .font(.title2)
@@ -27,7 +29,7 @@ struct AddHabitView: View {
                 HStack{
                     Spacer()
                     Button(action:{
-                        //Add action here
+                        saveHabit()
                     })
                     {
                         Text("Save")
@@ -35,6 +37,7 @@ struct AddHabitView: View {
                             .font(.title2)
                     }
                 }
+            
             }
             .padding()
             .background(Color.blue)
@@ -60,21 +63,19 @@ struct AddHabitView: View {
                 }
                 //Share with (Navigation)
                 Section{
-                    NavigationLink(destination: ShareWithView(), isActive: $showShareWith){
+                    NavigationLink(destination: ShareWithView()){
                         HStack{
                             Text("Share With")
                             Spacer()
-                            Image(systemName: "chevron.right")
                         }
                     }
                 }
                 //Reminders (Navigation)
                 Section{
-                    NavigationLink(destination: RemindersView(), isActive: $showReminders){
+                    NavigationLink(destination: RemindersView()){
                         HStack{
                             Text("Reminders")
                             Spacer()
-                            Image(systemName: "chevron.right")
                         }
                     }
                 }
@@ -86,23 +87,50 @@ struct AddHabitView: View {
         }
         .background(Color.blue.opacity(0.25))
         .ignoresSafeArea(.container, edges: .bottom)
+        
+    }
+    private func saveHabit(){
+        guard let user = Auth.auth().currentUser else {
+            print("No authenticated user")
+            return
+        }
+        let db = Firestore.firestore()
+        let newHabit: [String: Any] = [
+            "title": habitTitle,
+            "description": description,
+            "frequency": frequency,
+            "userId": user.uid,
+            "createdAt": FieldValue.serverTimestamp()
+            ]
+        db.collection("habits").addDocument(data: newHabit) { err in
+            if let err = err {
+                print("Error saving habit: \(err.localizedDescription)")
+            } else {
+                print("Habit Saved!")
+                habitTitle = ""
+                description = ""
+                frequency = "Daily"
+            }
+        }
+    }
+}
+
+struct ShareWithView: View {
+    var body: some View {
+        Text("Share with Friends")
+            .navigationTitle("Share With")
     }
 }
 
 struct RemindersView: View {
     var body: some View {
         Text("RemindersView")
-            .navigationTitle("Share With")
-    }
-}
-struct ShareWithView: View {
-    var body: some View {
-        Text("Share with Friends")
             .navigationTitle("Reminders")
     }
 }
 
-
 #Preview{
-    AddHabitView()
+    NavigationStack{
+        AddHabitView()
+    }
 }

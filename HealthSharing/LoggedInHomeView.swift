@@ -42,7 +42,9 @@ struct LoggedInHomeView: View {
         .background(Color.blue.opacity(0.25))
         .ignoresSafeArea(.container, edges: .bottom)
         .fullScreenCover(isPresented: $showAddHabit) {
-            AddHabitView()
+            NavigationStack{
+                AddHabitView()
+            }
         }
     }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2927A4FE2E161FBF00DD696C /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 2927A4FD2E161FBF00DD696C /* FirebaseFirestore */; };
 		29DB6A7B2E107D0F00854151 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 29DB6A7A2E107D0F00854151 /* FirebaseAnalytics */; };
 		29DB6A7D2E107D0F00854151 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 29DB6A7C2E107D0F00854151 /* FirebaseAuth */; };
 /* End PBXBuildFile section */
@@ -59,6 +60,7 @@
 			files = (
 				29DB6A7B2E107D0F00854151 /* FirebaseAnalytics in Frameworks */,
 				29DB6A7D2E107D0F00854151 /* FirebaseAuth in Frameworks */,
+				2927A4FE2E161FBF00DD696C /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +123,7 @@
 			packageProductDependencies = (
 				29DB6A7A2E107D0F00854151 /* FirebaseAnalytics */,
 				29DB6A7C2E107D0F00854151 /* FirebaseAuth */,
+				2927A4FD2E161FBF00DD696C /* FirebaseFirestore */,
 			);
 			productName = HealthSharing;
 			productReference = 29DB6A352E0F170B00854151 /* HealthSharing.app */;
@@ -583,6 +586,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2927A4FD2E161FBF00DD696C /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 29DB6A792E107D0F00854151 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
 		29DB6A7A2E107D0F00854151 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 29DB6A792E107D0F00854151 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
