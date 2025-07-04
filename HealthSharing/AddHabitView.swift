@@ -18,78 +18,103 @@ struct AddHabitView: View {
     @State private var showShareWith = false
     @State private var showReminders = false
     @State private var selectedDays: Set<String> = []
-    let allDays = ["Mon", "Tue", "Wed", "Thurs", "Fri", "Sat", "Sun"]
+    let allDays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Sun"]
     @State private var daysPerWeek: String = ""
     @State private var daysPerMonth: String = ""
     
-    let frequencyOptions = ["Daily", "Specific Days", "Number of Days per Week", "Number of days per Month"]
+    let frequencyOptions = ["Daily", "Specific Days", "Days per Week", "Days per Month"]
     
     var body: some View {
-        VStack(alignment: .leading, spacing:6){
-            ZStack{
-                Text("Add Habit")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                HStack{
-                    Spacer()
-                    Button(action:{
-                        saveHabit()
-                    })
-                    {
-                        Text("Save")
-                            .foregroundColor(.white)
-                            .font(.title2)
+        ZStack(alignment:.bottom){
+            VStack(alignment: .leading, spacing:6){
+                ZStack{
+                    Text("Add Habit")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    HStack{
+                        Spacer()
+                        Button(action:{
+                            saveHabit()
+                        })
+                        {
+                            Text("Save")
+                                .foregroundColor(.white)
+                                .font(.title2)
+                        }
                     }
+                    
                 }
-            
-            }
-            .padding()
-            .background(Color.blue)
-            
-            Spacer()
-            Form {
-                Section(header: Text("Habit Title")) {
-                    TextField("Enter Habit name", text: $habitTitle)
-                }
-                Section(header: Text("Description")) {
-                    TextEditor(text: $description)
-                        .frame(height: 50)
-                }
+                .padding()
+                .background(Color.blue)
                 
-                FrequencySectionView(
-                    frequency: $frequency,
-                    selectedDays: $selectedDays,
-                    daysPerWeek: $daysPerWeek,
-                    daysPerMonth: $daysPerMonth,
-                    allDays: allDays,
-                    frequencyOptions: frequencyOptions
-                )
-                Section {
-                    NavigationLink(destination: ShareWithView()) {
-                        HStack {
-                            Text("Share With")
-                            Spacer()
+                
+                Form {
+                    Section(header: Text("Habit Title")) {
+                        TextField("Enter Habit name", text: $habitTitle)
+                    }
+                    Section(header: Text("Description")) {
+                        TextEditor(text: $description)
+                            .frame(height: 50)
+                    }
+                    
+                    Section(header: Text("Frequency")) {
+                        Picker("Frequency", selection: $frequency) {
+                            ForEach(frequencyOptions, id: \.self) { option in
+                                Text(option)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle()) // Or MenuPickerStyle for a dropdown
+                        
+                        if frequency == "Specific Days" {
+                            // User picks which days; checkbox style, not chips
+                            ForEach(allDays, id: \.self) { day in
+                                Toggle(isOn: Binding(
+                                    get: { selectedDays.contains(day) },
+                                    set: { isSelected in
+                                        if isSelected { selectedDays.insert(day) }
+                                        else { selectedDays.remove(day) }
+                                    }
+                                )) {
+                                    Text(day)
+                                }
+                            }
+                        }
+                        if frequency == "Days per Week" {
+                            TextField("How many days per week?", text: $daysPerWeek)
+                                .keyboardType(.numberPad)
+                        }
+                        if frequency == "Days per Month" {
+                            TextField("How many days per month?", text: $daysPerMonth)
+                                .keyboardType(.numberPad)
+                        }
+                    }
+                    
+                    Section {
+                        NavigationLink(destination: ShareWithView()) {
+                            HStack {
+                                Text("Share With")
+                                Spacer()
+                            }
+                        }
+                    }
+                    Section {
+                        NavigationLink(destination: RemindersView()) {
+                            HStack {
+                                Text("Reminders")
+                                Spacer()
+                            }
                         }
                     }
                 }
-                Section {
-                    NavigationLink(destination: RemindersView()) {
-                        HStack {
-                            Text("Reminders")
-                            Spacer()
-                        }
-                    }
-                }
+                .background(Color.blue.opacity(0.25))
+                
+                
             }
-
-            
             FooterBar()
             
         }
-        .background(Color.blue.opacity(0.25))
         .ignoresSafeArea(.container, edges: .bottom)
-        
     }
     private func saveHabit(){
         guard let user = Auth.auth().currentUser else {
