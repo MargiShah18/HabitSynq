@@ -7,6 +7,14 @@
 
 import Foundation
 import SwiftUI
+import FirebaseAuth
+
+struct Habit : Identifiable {
+    var id :String
+    var title : String
+    var description : String
+    var frequency : String  
+}
 
 struct LoggedInHomeView: View {
     @State private var showAddHabit = false
