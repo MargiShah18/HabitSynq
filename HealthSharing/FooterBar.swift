@@ -40,7 +40,7 @@ struct FooterBar: View {
             }
             Spacer()
             Button(action:{
-                //Home action
+                SettingsView()
             }){
                 VStack{
                     Image(systemName: "gearshape.fill")

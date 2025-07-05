@@ -96,7 +96,7 @@ struct ContentView: View {
                 
             }
             .fullScreenCover(isPresented : $isAuthenticated){
-                LoggedInHomeView()
+                MainTabView()
             }
         }
         .navigationBarHidden(true)

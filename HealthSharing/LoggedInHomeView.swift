@@ -44,7 +44,6 @@ struct LoggedInHomeView: View {
             Spacer()
             Text("Add a habit and get started!")
             Spacer()
-            FooterBar()
             
         }
         .background(Color.blue.opacity(0.25))

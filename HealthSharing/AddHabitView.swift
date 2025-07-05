@@ -111,7 +111,7 @@ struct AddHabitView: View {
                 
                 
             }
-            FooterBar()
+        
             
         }
         .ignoresSafeArea(.container, edges: .bottom)
