@@ -9,6 +9,8 @@ import Foundation
 import SwiftUI
 
 struct MainTabView  : View {
+    @Binding var isAuthenticated: Bool
+    
     var body: some View {
         TabView{
             NavigationStack{
@@ -33,7 +35,7 @@ struct MainTabView  : View {
                 Text("Messages")
             }
             NavigationStack{
-                SettingsView()
+                SettingsView(isAuthenticated: $isAuthenticated)
             }
             .tabItem{
                 Image(systemName: "gearshape.fill")

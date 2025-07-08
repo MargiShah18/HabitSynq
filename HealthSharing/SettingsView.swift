@@ -10,15 +10,19 @@ import SwiftUI
 import FirebaseAuth
 
 struct SettingsView: View {
+    @Binding var isAuthenticated: Bool
     @State private var showNamePopover = false
     @State private var showEmailPopover = false
     @State private var showPasswordPopover = false
+    @State private var showQRPopover = false
+    @State private var showDeleteAlert = false
     
     @State private var newName: String = ""
     @State private var newEmail: String = ""
     @State private var newPassword: String = ""
     @State private var userEmail: String = ""
     @State private var userDisplayName: String = ""
+    @State private var confirmPassword: String = ""
     
     var userName: String{
         if !userDisplayName.isEmpty{
@@ -113,6 +117,8 @@ struct SettingsView: View {
                     }
                     //Password
                     Button{
+                        newPassword = ""
+                        confirmPassword = ""
                         showPasswordPopover = true
                     } label: {
                         Label("Reset Password", systemImage: "lock")
@@ -120,18 +126,47 @@ struct SettingsView: View {
                     .popover(isPresented: $showPasswordPopover) {
                         VStack(spacing: 16){
                             Text("Reset Password").font(.headline)
-                            TextField("New Password", text: $newPassword).textFieldStyle(.roundedBorder)
+                            SecureField("New Password", text: $newPassword).textFieldStyle(.roundedBorder)
+                            SecureField("Confirm Password", text: $confirmPassword).textFieldStyle(.roundedBorder)
+                            if !confirmPassword.isEmpty && confirmPassword != newPassword {
+                                Text("Passwords do not match").foregroundColor(.red)
+                                    .font(.caption)
+                            }
                             Button("Save"){
                                 updatePassword()
                             }
                             .buttonStyle(.borderedProminent)
+                            .disabled(newPassword.isEmpty || confirmPassword.isEmpty || confirmPassword != newPassword)
                         }
                         .padding()
                         .frame(width: 280)
                     }
-                    NavigationLink(destination: Text("QR Code Page")) {
-                                            Label("QR Code", systemImage: "qrcode")
+                    // QR Code Button
+                    Button {
+                        showQRPopover = true
+                    } label: {
+                        HStack {
+                            Label("QR Code", systemImage: "qrcode")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                        }
                     }
+                    .popover(isPresented: $showQRPopover) {
+                        VStack(spacing: 16) {
+                            Text("Scan to Add Me!").font(.headline)
+                            QRCodeView(dataString: userEmail)
+                                .frame(width: 200, height: 200)
+                            Text(userEmail)
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(.thinMaterial)
+                        .cornerRadius(16)
+                        .frame(width: 250)
+                    }
+
                 }
                 Section {
                     NavigationLink(destination: Text("Review Support")) {
@@ -149,7 +184,12 @@ struct SettingsView: View {
                 }
                Section {
                    Button(action: {
-                                        // Sign Out Logic Here
+                       do{
+                           try Auth.auth().signOut()
+                           isAuthenticated = false
+                       }catch{
+                           print("Error Signing out: \(error.localizedDescription)")
+                       }
                     }) {
                     Label("Sign Out", systemImage: "arrowshape.turn.up.left")
                         .foregroundColor(.red)
@@ -157,7 +197,7 @@ struct SettingsView: View {
                 }
                 Section {
                     Button(action: {
-                                        // Delete Account Logic Here
+                        showDeleteAlert = true
                     }) {
                     Label("Delete Account", systemImage: "trash")
                         .foregroundColor(.red)
@@ -212,6 +252,4 @@ struct SettingsView: View {
     }
 
 }
-#Preview {
-    SettingsView()
-}
+

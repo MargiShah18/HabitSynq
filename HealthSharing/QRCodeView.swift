@@ -30,10 +30,13 @@ struct QRCodeView: View {
         let data = Data(string.utf8)
         filter.setValue(data, forKey: "inputMessage")
         
-        if let outputImage = filter.outputImage,
-           let cgimg = context.createCGImage(outputImage.transformed(by: CGAffineTransform(scaleX:10, y:10)), from: outputImage.extent) {
-            return UIImage(cgImage: cgimg)
+        if let outputImage = filter.outputImage {
+            let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+            if let cgimg = context.createCGImage(scaledImage, from: scaledImage.extent) {
+                return UIImage(cgImage: cgimg)
+            }
         }
         return nil
     }
+
 }
