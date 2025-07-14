@@ -1,51 +1,53 @@
-//
-//  SettingsView.swift
-//  HealthSharing
-//
-//  Created by Margi Shah on 2025-07-04.
-//
+   //
+    //  SettingsView.swift
+    //  HealthSharing
+    //
+    //  Created by Margi Shah on 2025-07-04.
+    //
 
-import Foundation
-import SwiftUI
-import FirebaseAuth
-import FirebaseFirestore
+    import Foundation
+    import SwiftUI
+    import FirebaseAuth
+    import FirebaseFirestore
 
-struct SettingsView: View {
-    @Binding var isAuthenticated: Bool
-    @State private var showNamePopover = false
-    @State private var showEmailPopover = false
-    @State private var showPasswordPopover = false
-    @State private var showQRPopover = false
-    @State private var showDeleteAlert = false
-    
-    @State private var newName: String = ""
-    @State private var newEmail: String = ""
-    @State private var newPassword: String = ""
-    @State private var userEmail: String = ""
-    @State private var userDisplayName: String = ""
-    @State private var confirmPassword: String = ""
-    
-    var userName: String{
-        if !userDisplayName.isEmpty{
-            return userDisplayName
-        }
-        else if let atIndex = userEmail.firstIndex(of: "@"){
-            return String((userEmail[..<atIndex]))
-        }
-        return ""
-    }
-    
-    var body: some View {
-        VStack(spacing:0){
-            ZStack{
-                Color.blue
-                    .ignoresSafeArea(edges: .top)
-                Text("Settings")
-                    .font(.title2).bold()
-                    .foregroundColor(.white)
+    struct SettingsView: View {
+        @Binding var isAuthenticated: Bool
+        @State private var showNamePopover = false
+        @State private var showEmailPopover = false
+        @State private var showPasswordPopover = false
+        @State private var showQRPopover = false
+        @State private var showDeleteAlert = false
+        @State private var showReviewPopover = false
+        
+        @State private var newName: String = ""
+        @State private var newEmail: String = ""
+        @State private var newPassword: String = ""
+        @State private var userEmail: String = ""
+        @State private var userDisplayName: String = ""
+        @State private var confirmPassword: String = ""
+        @State private var reviewRating = 0
+        
+        var userName: String{
+            if !userDisplayName.isEmpty{
+                return userDisplayName
             }
-            .frame(height: 80)
-            ScrollView{
+            else if let atIndex = userEmail.firstIndex(of: "@"){
+                return String((userEmail[..<atIndex]))
+            }
+            return ""
+        }
+        
+        var body: some View {
+            VStack(spacing:0){
+                ZStack{
+                    Color.blue
+                        .ignoresSafeArea(edges: .top)
+                    Text("Settings")
+                        .font(.title2).bold()
+                        .foregroundColor(.white)
+                }
+                .frame(height: 80)
+                
                 VStack(spacing:4){
                     ZStack{
                         Circle()
@@ -80,7 +82,11 @@ struct SettingsView: View {
                                     .foregroundColor(.gray)
                             }
                         }
-                        .popover(isPresented: $showNamePopover) {
+                        .popover(
+                            isPresented: $showNamePopover,
+                            attachmentAnchor: .rect(.bounds),
+                            arrowEdge: .trailing
+                        ) {
                             VStack(spacing: 16){
                                 Text("Edit Name").font(.headline)
                                 TextField("Name", text: $newName).textFieldStyle(.roundedBorder)
@@ -90,7 +96,8 @@ struct SettingsView: View {
                                 .buttonStyle(.borderedProminent)
                             }
                             .padding()
-                            .frame(width: 280)
+                            .frame(width: 260)
+                            
                         }
                         //Email
                         Button{
@@ -169,20 +176,7 @@ struct SettingsView: View {
                         }
                         
                     }
-                    Section {
-                        NavigationLink(destination: Text("Review Support")) {
-                            Label("Review Support", systemImage: "star")
-                        }
-                        NavigationLink(destination: Text("FAQs")) {
-                            Label("FAQs", systemImage: "questionmark.circle")
-                        }
-                        NavigationLink(destination: Text("Feedback")) {
-                            Label("Feedback", systemImage: "bubble.left.and.bubble.right")
-                        }
-                        NavigationLink(destination: Text("Notification Settings")) {
-                            Label("Notification Settings", systemImage: "bell")
-                        }
-                    }
+                    
                     Section {
                         Button(action: {
                             do{
@@ -216,88 +210,87 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .padding(.top,16)
-                .padding(.bottom,32)
+                .padding(.bottom,4)
+                Spacer(minLength: 0)
                 
+                
+            }
+            .navigationBarHidden(true)
+            .onAppear{
+                loadUserInfo()
             }
             
         }
-        .ignoresSafeArea(.container, edges: .bottom)
-        .navigationBarHidden(true)
-        .onAppear{
-            loadUserInfo()
-        }
-        
-    }
-    private func loadUserInfo() {
-        if let user = Auth.auth().currentUser{
-            userEmail = user.email ?? ""
-            userDisplayName = user.displayName ?? ""
-        }
-    }
-    private func updateName() {
-        guard let user = Auth.auth().currentUser else {return}
-        let changeRequest = user.createProfileChangeRequest()
-        changeRequest.displayName = newName
-        changeRequest.commitChanges { error in
-            if error == nil{
-                userDisplayName = newName
-                showNamePopover = false
+        private func loadUserInfo() {
+            if let user = Auth.auth().currentUser{
+                userEmail = user.email ?? ""
+                userDisplayName = user.displayName ?? ""
             }
         }
-    }
-    private func updateEmail() {
-        guard let user = Auth.auth().currentUser else {return}
-        user.updateEmail(to: newEmail){error in
-            if error == nil{
-                userEmail = newEmail
-                showEmailPopover = false
-            }
-        }
-    }
-    private func updatePassword() {
-        guard let user = Auth.auth().currentUser else {return}
-        user.updatePassword(to: newPassword){error in
-            if error == nil{
-                showPasswordPopover = false
-            }
-        }
-    }
-    private func performDeleteAccount() {
-        guard let user = Auth.auth().currentUser else {return}
-        let userId = user.uid
-        let db = Firestore.firestore()
-        
-        let batch = db.batch()
-        db.collection("habits").whereField("userId", isEqualTo: userId).getDocuments {snapshot, error in
-            if let docs = snapshot?.documents{
-                for doc in docs{
-                    batch.deleteDocument(doc.reference)
+        private func updateName() {
+            guard let user = Auth.auth().currentUser else {return}
+            let changeRequest = user.createProfileChangeRequest()
+            changeRequest.displayName = newName
+            changeRequest.commitChanges { error in
+                if error == nil{
+                    userDisplayName = newName
+                    showNamePopover = false
                 }
             }
-            // Optionally: if you have a "users" collection
-            batch.deleteDocument(db.collection("users").document(userId))
+        }
+        private func updateEmail() {
+            guard let user = Auth.auth().currentUser else {return}
+            user.updateEmail(to: newEmail){error in
+                if error == nil{
+                    userEmail = newEmail
+                    showEmailPopover = false
+                }
+            }
+        }
+        private func updatePassword() {
+            guard let user = Auth.auth().currentUser else {return}
+            user.updatePassword(to: newPassword){error in
+                if error == nil{
+                    showPasswordPopover = false
+                }
+            }
+        }
+        private func performDeleteAccount() {
+            guard let user = Auth.auth().currentUser else {return}
+            let userId = user.uid
+            let db = Firestore.firestore()
             
-            batch.commit{ batchError in
-                    if let batchError = batchError{
-                        print("Error deleting Firestore data: \(batchError.localizedDescription)")
-                        return
-                }
-                
-                user.delete{ authError in
-                        if let authError = authError{
-                        print("Error deleting user: \(authError.localizedDescription)")
+            let batch = db.batch()
+            db.collection("habits").whereField("userId", isEqualTo: userId).getDocuments {snapshot, error in
+                if let docs = snapshot?.documents{
+                    for doc in docs{
+                        batch.deleteDocument(doc.reference)
                     }
-                    else{
-                        isAuthenticated = false
+                }
+                // Optionally: if you have a "users" collection
+                batch.deleteDocument(db.collection("users").document(userId))
+                
+                batch.commit{ batchError in
+                        if let batchError = batchError{
+                            print("Error deleting Firestore data: \(batchError.localizedDescription)")
+                            return
+                    }
+                    
+                    user.delete{ authError in
+                            if let authError = authError{
+                            print("Error deleting user: \(authError.localizedDescription)")
+                        }
+                        else{
+                            isAuthenticated = false
+                        }
                     }
                 }
             }
         }
-    }
-}
+       
         
-    
-
+    }
+            
+        
 
 
