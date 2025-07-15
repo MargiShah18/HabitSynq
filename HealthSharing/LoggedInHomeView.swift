@@ -13,25 +13,31 @@ struct Habit : Identifiable {
     var id :String
     var title : String
     var description : String
-    var frequency : String  
+    var frequencyType : String
+    var frequencyDays : [String]
+    var frequencyCount : Int? // optional for week or month
 }
 
 struct LoggedInHomeView: View {
     @State private var showAddHabit = false
+    @StateObject private var habitsVM = HabitsViewModel()
+    
+    var userId: String {
+        Auth.auth().currentUser?.uid ?? ""
+    }
     
     var body: some View {
-        VStack(spacing:0){
-            ZStack{
+        VStack(spacing: 0) {
+            ZStack {
                 Text("My Habits")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
-                HStack{
+                HStack {
                     Spacer()
-                    Button(action:{
+                    Button(action: {
                         showAddHabit = true
-                    })
-                    {
+                    }) {
                         Image(systemName: "plus")
                             .foregroundColor(.white)
                             .imageScale(.large)
@@ -41,20 +47,39 @@ struct LoggedInHomeView: View {
             .padding()
             .background(Color.blue)
             
-            Spacer()
-            Text("Add a habit and get started!")
-            Spacer()
-            
+            if habitsVM.habits.isEmpty {
+                Spacer()
+                Text("Add a habit and get started!")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        ForEach(habitsVM.habits) { habit in
+                            HabitCardView(habit: habit)
+                        }
+                    }
+                    .padding(.top, 16)
+                }
+                .background(Color(.systemGroupedBackground))
+            }
         }
-        .background(Color.blue.opacity(0.25))
+        .background(Color(.systemGroupedBackground))
         .ignoresSafeArea(.container, edges: .bottom)
-        .fullScreenCover(isPresented: $showAddHabit) {
-            NavigationStack{
+        .fullScreenCover(isPresented: $showAddHabit, onDismiss: {
+            habitsVM.fetchHabits(for: userId)
+        }) {
+            NavigationStack {
                 AddHabitView()
             }
         }
+        .onAppear {
+            habitsVM.fetchHabits(for: userId)
+        }
     }
 }
+
 #Preview{
     LoggedInHomeView()
 }
