@@ -33,6 +33,11 @@ struct AddHabitView: View {
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     HStack{
+                        Button(action: { dismiss() }){
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.white)
+                                .font(.title2)
+                        }
                         Spacer()
                         Button(action:{
                             saveHabit()
