@@ -21,6 +21,9 @@ struct Habit : Identifiable {
 struct LoggedInHomeView: View {
     @State private var showAddHabit = false
     @StateObject private var habitsVM = HabitsViewModel()
+    @State private var showHabitSheet = false
+    @State private var selectedHabit: Habit? = nil
+
     
     var userId: String {
         Auth.auth().currentUser?.uid ?? ""
@@ -58,11 +61,20 @@ struct LoggedInHomeView: View {
                     VStack(spacing: 16) {
                         ForEach(habitsVM.habits) { habit in
                             HabitCardView(habit: habit)
+                                .onTapGesture{
+                                    selectedHabit = habit
+                                    showHabitSheet = true
+                                }
                         }
                     }
                     .padding(.top, 16)
                 }
                 .background(Color(.systemGroupedBackground))
+                .sheet(isPresented: $showHabitSheet){
+                    if let habit = selectedHabit {
+                        HabitCalendarSheet(habit: habit)
+                    }
+                }
             }
         }
         .background(Color(.systemGroupedBackground))

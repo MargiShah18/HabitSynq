@@ -129,15 +129,16 @@ struct AddHabitView: View {
         let db = Firestore.firestore()
         var frequencyData: [String: Any] = ["type": frequency]
             
-            if frequency == "Daily" {
-                frequencyData["days"] = allDays
-            } else if frequency == "Specific Days" {
-                frequencyData["days"] = Array(selectedDays)
-            } else if frequency == "Number of Days per Week" {
-                frequencyData["count"] = Int(daysPerWeek) ?? 0
-            } else if frequency == "Number of Days per Month" {
-                frequencyData["count"] = Int(daysPerMonth) ?? 0
-            }
+        if frequency == "Daily" {
+            frequencyData["days"] = allDays
+        } else if frequency == "Specific Days" {
+            frequencyData["days"] = Array(selectedDays)
+        } else if frequency == "Days per Week" {
+            frequencyData["count"] = Int(daysPerWeek) ?? 0
+        } else if frequency == "Days per Month" {
+            frequencyData["count"] = Int(daysPerMonth) ?? 0
+        }
+
         let newHabit: [String: Any] = [
             "title": habitTitle,
             "description": description,

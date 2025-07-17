@@ -13,13 +13,14 @@ struct HabitCardView: View {
                 .foregroundColor(.gray)
             HStack(spacing: 12) {
                 ForEach(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], id: \.self) { day in
+                    let isSelected = habit.frequencyType == "Daily" || habit.frequencyDays.contains(day)
                     Circle()
-                        .fill(habit.frequencyDays.contains(day) ? Color.blue : Color.gray.opacity(0.15))
+                        .fill(isSelected ? Color.blue : Color.gray.opacity(0.15))
                         .frame(width: 38, height: 38)
                         .overlay(
                             Text(day)
                                 .font(.subheadline)
-                                .foregroundColor(habit.frequencyDays.contains(day) ? .white : .gray)
+                                .foregroundColor(isSelected ? .white : .gray)
                         )
                         .animation(.spring(), value: habit.frequencyDays) // animated highlight
                 }
