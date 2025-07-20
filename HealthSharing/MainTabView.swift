@@ -28,13 +28,6 @@ struct MainTabView  : View {
                 Text("Friends")
             }
             NavigationStack{
-                //MessageView
-            }
-            .tabItem {
-                Image(systemName: "message.fill")
-                Text("Messages")
-            }
-            NavigationStack{
                 SettingsView(isAuthenticated: $isAuthenticated)
             }
             .tabItem{

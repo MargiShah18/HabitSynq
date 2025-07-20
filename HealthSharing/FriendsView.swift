@@ -7,6 +7,8 @@
 
 import Foundation
 import SwiftUI
+import Firebase
+import FirebaseAuth
 
 struct FriendsView: View {
     @State private var showAddFriend = false
@@ -40,7 +42,7 @@ struct FriendsView: View {
             Spacer()
         }
         .sheet(isPresented: $showAddFriend) {
-            AddFriendSheet()
+            AddFriendSheet(userId: Auth.auth().currentUser?.uid ?? "UNKNOWN")
         }
         .background(Color(.systemGroupedBackground))
         .ignoresSafeArea(.container, edges: .bottom)
