@@ -72,7 +72,9 @@ struct LoggedInHomeView: View {
                 .background(Color(.systemGroupedBackground))
                 .sheet(isPresented: $showHabitSheet){
                     if let habit = selectedHabit {
-                        HabitCalendarSheet(habit: habit)
+                        HabitCalendarSheet(habit: habit, onSaved: {
+                            habitsVM.fetchHabits(for: userId)
+                        })
                     }
                 }
             }

@@ -21,7 +21,7 @@ struct MainTabView  : View {
                 Text("Home")
             }
             NavigationStack{
-                //FriendsView
+                FriendsView()
             }
             .tabItem {
                 Image(systemName:"person.2.fill")
