@@ -60,7 +60,7 @@ struct LoggedInHomeView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         ForEach(habitsVM.habits) { habit in
-                            HabitCardView(habit: habit)
+                            HabitCardView(viewModel: habitsVM, habit: habit)
                                 .onTapGesture{
                                     selectedHabit = habit
                                     showHabitSheet = true

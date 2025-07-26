@@ -4,22 +4,15 @@ import FirebaseFirestore
 
 struct HabitCalendarSheet: View {
     let habit: Habit
+    var onSaved: (() -> Void)?
     
-    var onSaved: (()->Void)?
     @State private var completion: [String: Bool] = [:] // true = green, false = red
     @State private var selectedDate: Date?
     @State private var showAlert = false
     @Environment(\.dismiss) private var dismiss
     
     var userId: String {
-            Auth.auth().currentUser?.uid ?? ""
-        }
-
-    
-    // Map habit.frequencyDays ["Mo", "Tu", ...] to weekday numbers 1=Sun, 2=Mon,...
-    var activeWeekdays: Set<Int> {
-        let dayMap = ["Su":1, "Mo":2, "Tu":3, "We":4, "Th":5, "Fr":6, "Sa":7]
-        return Set(habit.frequencyDays.compactMap { dayMap[$0] })
+        Auth.auth().currentUser?.uid ?? ""
     }
 
     var body: some View {
@@ -29,33 +22,33 @@ struct HabitCalendarSheet: View {
                 .padding(.top)
             
             CalendarView(
+                habit: habit,
                 selectedDate: $selectedDate,
                 completion: completion,
-                activeWeekdays: activeWeekdays,
-                mark:mark
+                mark: mark
             )
-                .frame(maxHeight: 400)
-                .padding()
+            .frame(maxHeight: 400)
+            .padding()
             
             Spacer()
             
             Button(action: saveAll) {
-                            Text("Save")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(Color.blue)
-                                .cornerRadius(10)
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, 16)
+                Text("Save")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 16)
         }
         .onAppear {
             fetchCompletion()
         }
         .onChange(of: selectedDate) { date in
-            if let date = date, isDateSelectable(date) {
+            if let date = date, habit.isActive(on: date) {
                 showAlert = true
             }
         }
@@ -70,11 +63,6 @@ struct HabitCalendarSheet: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
-    }
-    
-    func isDateSelectable(_ date: Date) -> Bool {
-        let weekday = Calendar.current.component(.weekday, from: date)
-        return activeWeekdays.contains(weekday)
     }
     
     func mark(date: Date?, done: Bool) {
@@ -92,12 +80,13 @@ struct HabitCalendarSheet: View {
                 "done": done,
                 "date": key,
                 "userId": userId
-            ]){ error in
+            ]) { error in
                 if let error = error {
                     print("Error saving completion: \(error)")
                 }
             }
     }
+    
     func fetchCompletion() {
         let db = Firestore.firestore()
         db.collection("habits")
@@ -105,96 +94,110 @@ struct HabitCalendarSheet: View {
             .collection("completion")
             .getDocuments { snapshot, error in
                 guard let docs = snapshot?.documents else { return }
-                var results: [String:Bool] = [:]
+                var results: [String: Bool] = [:]
                 for doc in docs {
                     let data = doc.data()
                     if let done = data["done"] as? Bool,
-                       let date = data["date"] as? String
-                    {
+                       let date = data["date"] as? String {
                         results[date] = done
                     }
                 }
                 completion = results
             }
     }
+    
     func saveAll() {
-            let db = Firestore.firestore()
-            let group = DispatchGroup()
-            for (dateString, done) in completion {
-                group.enter()
-                db.collection("habits")
-                    .document(habit.id)
-                    .collection("completion")
-                    .document(dateString)
-                    .setData([
-                        "done": done,
-                        "date": dateString,
-                        "userId": userId
-                    ]) { _ in group.leave() }
-            }
-            group.notify(queue: .main) {
-                // Call the parent refresh (optional)
-                onSaved?()
-                dismiss()
-            }
+        let db = Firestore.firestore()
+        let group = DispatchGroup()
+        for (dateString, done) in completion {
+            group.enter()
+            db.collection("habits")
+                .document(habit.id)
+                .collection("completion")
+                .document(dateString)
+                .setData([
+                    "done": done,
+                    "date": dateString,
+                    "userId": userId
+                ]) { _ in group.leave() }
         }
+        group.notify(queue: .main) {
+            onSaved?()
+            dismiss()
+        }
+    }
 }
 
-// MARK: - Simple CalendarView (iOS 17+)
+// MARK: - CalendarView with Sunday-first week
 struct CalendarView: View {
+    let habit: Habit
     @Binding var selectedDate: Date?
     var completion: [String: Bool]
-    let activeWeekdays: Set<Int>
-    var mark: (Date?, Bool)-> Void
+    var mark: (Date?, Bool) -> Void
     
     @State private var currentMonth: Date = Date().startOfMonth()
     
     var body: some View {
         let days = currentMonth.daysInMonth()
+        let firstDayWeekday = Calendar.current.component(.weekday, from: days.first ?? currentMonth) - 1 // 0=Sunday, 6=Saturday
+        let leadingEmptyDays = Array(repeating: Date.distantPast, count: firstDayWeekday) // Placeholder dates
+        let allDays = leadingEmptyDays + days
         let columns = Array(repeating: GridItem(.flexible()), count: 7)
+        
         VStack {
             HStack {
-                Button(action: { currentMonth = Calendar.current.date(byAdding: .month, value: -1, to: currentMonth)! }) {
+                Button(action: {
+                    currentMonth = Calendar.current.date(byAdding: .month, value: -1, to: currentMonth)!
+                }) {
                     Image(systemName: "chevron.left")
                 }
                 Spacer()
                 Text(currentMonth.monthYearString)
                     .font(.headline)
                 Spacer()
-                Button(action: { currentMonth = Calendar.current.date(byAdding: .month, value: 1, to: currentMonth)! }) {
+                Button(action: {
+                    currentMonth = Calendar.current.date(byAdding: .month, value: 1, to: currentMonth)!
+                }) {
                     Image(systemName: "chevron.right")
                 }
             }.padding(.horizontal)
             
             LazyVGrid(columns: columns) {
-                ForEach(["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"], id: \.self) { day in
+                ForEach(weekdaySymbols, id: \.self) { day in
                     Text(day).bold().frame(maxWidth: .infinity)
                 }
                 
-                ForEach(days, id: \.self) { day in
-                    let weekday = Calendar.current.component(.weekday, from: day)
-                    let isSelectable = activeWeekdays.contains(weekday)
-                    let isSelected = selectedDate?.stripTime() == day.stripTime()
-                    let key = dateKey(day)
-                    let status = completion[key]
+                ForEach(Array(allDays.enumerated()), id: \.offset) { index, day in
+                    let isPlaceholder = day == Date.distantPast
+                    let isSelectable = !isPlaceholder && habit.isActive(on: day)
+                    let isSelected = !isPlaceholder && selectedDate?.stripTime() == day.stripTime()
+                    let key = isPlaceholder ? "" : dateKey(day)
+                    let status = isPlaceholder ? nil : completion[key]
                     
                     ZStack {
-                        Circle()
-                            .stroke(isSelected ? Color.blue : .clear, lineWidth: 2)
-                            .background(
-                                Circle()
-                                    .fill(
-                                        status == true ? Color.green :
+                        if isPlaceholder {
+                            // Empty space for alignment
+                            Circle()
+                                .fill(Color.clear)
+                                .frame(width: 38, height: 38)
+                        } else {
+                            Circle()
+                                .stroke(isSelected ? Color.blue : .clear, lineWidth: 2)
+                                .background(
+                                    Circle()
+                                        .fill(
+                                            status == true ? Color.green :
                                             status == false ? Color.red :
                                             isSelectable ? Color.blue.opacity(0.15) : Color.gray.opacity(0.1)
-                                    )
-                            )
-                            .frame(width: 38, height: 38)
-                        Text("\(Calendar.current.component(.day, from: day))")
-                            .foregroundColor(isSelectable ? .primary : .gray)
+                                        )
+                                )
+                                .frame(width: 38, height: 38)
+                            Text("\(Calendar.current.component(.day, from: day))")
+                                .foregroundColor(isSelectable ? .primary : .gray)
+                        }
                     }
                     .onTapGesture {
-                        if isSelectable {
+                        if !isPlaceholder && isSelectable {
                             selectedDate = day
                         }
                     }
@@ -202,32 +205,10 @@ struct CalendarView: View {
             }
         }
     }
+    
     func dateKey(_ date: Date) -> String {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            return formatter.string(from: date)
-        }
-}
-
-// MARK: - Helpers
-extension Date {
-    func stripTime() -> Date {
-        Calendar.current.startOfDay(for: self)
-    }
-    func daysInMonth() -> [Date] {
-        let calendar = Calendar.current
-        guard let range = calendar.range(of: .day, in: .month, for: self),
-              let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: self))
-        else { return [] }
-        return range.compactMap { calendar.date(byAdding: .day, value: $0 - 1, to: firstDay) }
-    }
-    var monthYearString: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter.string(from: self)
-    }
-    func startOfMonth() -> Date {
-        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: self))!
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 }
-

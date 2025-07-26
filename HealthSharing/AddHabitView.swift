@@ -18,7 +18,7 @@ struct AddHabitView: View {
     @State private var showShareWith = false
     @State private var showReminders = false
     @State private var selectedDays: Set<String> = []
-    let allDays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Sun"]
+    let allDays = weekdaySymbols
     @State private var daysPerWeek: String = ""
     @State private var daysPerMonth: String = ""
     
@@ -130,7 +130,7 @@ struct AddHabitView: View {
         var frequencyData: [String: Any] = ["type": frequency]
             
         if frequency == "Daily" {
-            frequencyData["days"] = allDays
+            frequencyData["days"] = weekdaySymbols
         } else if frequency == "Specific Days" {
             frequencyData["days"] = Array(selectedDays)
         } else if frequency == "Days per Week" {
