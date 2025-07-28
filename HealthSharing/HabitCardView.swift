@@ -102,20 +102,25 @@ struct HabitDayCircle: View {
                         if overlayDay == daySymbol {
                             OverlayMenu(
                                 onSuccess: {
-                                    viewModel.setCompletion(habit: habit, date: date, status: .success)
-                                    overlayDay = nil
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        viewModel.setCompletion(habit: habit, date: date, status: .success)
+                                        overlayDay = nil
+                                    }
                                 },
                                 onFailure: {
-                                    viewModel.setCompletion(habit: habit, date: date, status: .failure)
-                                    overlayDay = nil
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        viewModel.setCompletion(habit: habit, date: date, status: .failure)
+                                        overlayDay = nil
+                                    }
                                 },
                                 onReset: {
-                                    viewModel.setCompletion(habit: habit, date: date, status: .none)
-                                    overlayDay = nil
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        viewModel.setCompletion(habit: habit, date: date, status: .none)
+                                        overlayDay = nil
+                                    }
                                 }
                             )
-                            .offset(y: -56)
-                            .transition(.scale)
+                            .offset(y: -65)
                         }
                     }
                 )

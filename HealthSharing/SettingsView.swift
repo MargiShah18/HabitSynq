@@ -12,10 +12,10 @@
 
     struct SettingsView: View {
         @Binding var isAuthenticated: Bool
-        @State private var showNamePopover = false
-        @State private var showEmailPopover = false
-        @State private var showPasswordPopover = false
-        @State private var showQRPopover = false
+        @State private var showNameSheet = false
+        @State private var showEmailSheet = false
+        @State private var showPasswordSheet = false
+        @State private var showQRSheet = false
         @State private var showDeleteAlert = false
         @State private var showReviewPopover = false
         
@@ -73,7 +73,7 @@
                         //Name
                         Button{
                             newName = userName
-                            showNamePopover = true
+                            showNameSheet = true
                         } label: {
                             HStack{
                                 Label("Name", systemImage: "person")
@@ -82,27 +82,22 @@
                                     .foregroundColor(.gray)
                             }
                         }
-                        .popover(
-                            isPresented: $showNamePopover,
-                            attachmentAnchor: .rect(.bounds),
-                            arrowEdge: .trailing
-                        ) {
-                            VStack(spacing: 16){
-                                Text("Edit Name").font(.headline)
-                                TextField("Name", text: $newName).textFieldStyle(.roundedBorder)
-                                Button("Save"){
+                        .sheet(isPresented: $showNameSheet) {
+                            EditNameSheet(
+                                currentName: userName,
+                                onSave: { name in
+                                    newName = name
                                     updateName()
                                 }
-                                .buttonStyle(.borderedProminent)
-                            }
-                            .padding()
-                            .frame(width: 260)
-                            
+                            )
+                            .presentationDetents([.height(300)])
+                            .presentationDragIndicator(.visible)
                         }
+                        
                         //Email
                         Button{
                             newEmail = userEmail
-                            showEmailPopover = true
+                            showEmailSheet = true
                         } label: {
                             HStack{
                                 Label("Email", systemImage: "envelope")
@@ -111,47 +106,40 @@
                                     .foregroundColor(.gray)
                             }
                         }
-                        .popover(isPresented: $showEmailPopover) {
-                            VStack(spacing: 16){
-                                Text("Edit Email").font(.headline)
-                                TextField("Email", text: $newEmail).textFieldStyle(.roundedBorder)
-                                Button("Save"){
+                        .sheet(isPresented: $showEmailSheet) {
+                            EditEmailSheet(
+                                currentEmail: userEmail,
+                                onSave: { email in
+                                    newEmail = email
                                     updateEmail()
                                 }
-                                .buttonStyle(.borderedProminent)
-                            }
-                            .padding()
-                            .frame(width: 280)
+                            )
+                            .presentationDetents([.height(300)])
+                            .presentationDragIndicator(.visible)
                         }
+                        
                         //Password
                         Button{
                             newPassword = ""
                             confirmPassword = ""
-                            showPasswordPopover = true
+                            showPasswordSheet = true
                         } label: {
                             Label("Reset Password", systemImage: "lock")
                         }
-                        .popover(isPresented: $showPasswordPopover) {
-                            VStack(spacing: 16){
-                                Text("Reset Password").font(.headline)
-                                SecureField("New Password", text: $newPassword).textFieldStyle(.roundedBorder)
-                                SecureField("Confirm Password", text: $confirmPassword).textFieldStyle(.roundedBorder)
-                                if !confirmPassword.isEmpty && confirmPassword != newPassword {
-                                    Text("Passwords do not match").foregroundColor(.red)
-                                        .font(.caption)
-                                }
-                                Button("Save"){
+                        .sheet(isPresented: $showPasswordSheet) {
+                            EditPasswordSheet(
+                                onSave: { password in
+                                    newPassword = password
                                     updatePassword()
                                 }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(newPassword.isEmpty || confirmPassword.isEmpty || confirmPassword != newPassword)
+                            )
+                            .presentationDetents([.height(380)])
+                            .presentationDragIndicator(.visible)
                             }
-                            .padding()
-                            .frame(width: 280)
-                        }
+                        
                         // QR Code Button
                         Button {
-                            showQRPopover = true
+                            showQRSheet = true
                         } label: {
                             HStack {
                                 Label("QR Code", systemImage: "qrcode")
@@ -160,19 +148,10 @@
                                     .foregroundColor(.gray)
                             }
                         }
-                        .popover(isPresented: $showQRPopover) {
-                            VStack(spacing: 16) {
-                                Text("Scan to Add Me!").font(.headline)
-                                QRCodeView(dataString: userEmail)
-                                    .frame(width: 200, height: 200)
-                                Text(userEmail)
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                            }
-                            .padding()
-                            .background(.thinMaterial)
-                            .cornerRadius(16)
-                            .frame(width: 250)
+                        .sheet(isPresented: $showQRSheet) {
+                            QRCodeSheet(userEmail: userEmail)
+                                .presentationDetents([.height(400)])
+                                .presentationDragIndicator(.visible)
                         }
                         
                     }
@@ -221,6 +200,7 @@
             }
             
         }
+        
         private func loadUserInfo() {
             if let user = Auth.auth().currentUser{
                 userEmail = user.email ?? ""
@@ -234,7 +214,7 @@
             changeRequest.commitChanges { error in
                 if error == nil{
                     userDisplayName = newName
-                    showNamePopover = false
+                    showNameSheet = false
                 }
             }
         }
@@ -243,7 +223,7 @@
             user.updateEmail(to: newEmail){error in
                 if error == nil{
                     userEmail = newEmail
-                    showEmailPopover = false
+                    showEmailSheet = false
                 }
             }
         }
@@ -251,7 +231,7 @@
             guard let user = Auth.auth().currentUser else {return}
             user.updatePassword(to: newPassword){error in
                 if error == nil{
-                    showPasswordPopover = false
+                    showPasswordSheet = false
                 }
             }
         }
@@ -287,8 +267,338 @@
                 }
             }
         }
-       
+    }
+
+    // MARK: - Modern Edit Sheets
+
+    struct EditNameSheet: View {
+        let currentName: String
+        let onSave: (String) -> Void
         
+        @State private var name: String = ""
+        @Environment(\.dismiss) private var dismiss
+        
+        var body: some View {
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 16) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 40, height: 6)
+                        .padding(.top, 12)
+                    
+                    Text("Edit Name")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .padding(.bottom, 8)
+                }
+                
+                // Content
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Display Name")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Enter your name", text: $name)
+                            .font(.body)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.systemGray6))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.blue.opacity(0.3), lineWidth: name.isEmpty ? 0 : 1)
+                            )
+                    }
+                    
+                    Button(action: {
+                        onSave(name)
+                        dismiss()
+                    }) {
+                        Text("Save")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(name.isEmpty ? Color.gray : Color.blue)
+                            )
+                    }
+                    .disabled(name.isEmpty)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+            }
+            .onAppear {
+                name = currentName
+            }
+        }
+    }
+
+    struct EditEmailSheet: View {
+        let currentEmail: String
+        let onSave: (String) -> Void
+        
+        @State private var email: String = ""
+        @Environment(\.dismiss) private var dismiss
+        
+        var isValidEmail: Bool {
+            email.contains("@") && email.contains(".")
+        }
+        
+        var body: some View {
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 16) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 40, height: 6)
+                        .padding(.top, 12)
+                    
+                    Text("Edit Email")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .padding(.bottom, 8)
+                }
+                
+                // Content
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Email Address")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Enter your email", text: $email)
+                            .font(.body)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.systemGray6))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(isValidEmail ? Color.blue.opacity(0.3) : Color.red.opacity(0.3), lineWidth: email.isEmpty ? 0 : 1)
+                            )
+                        
+                        if !email.isEmpty && !isValidEmail {
+                            Text("Please enter a valid email address")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    
+                    Button(action: {
+                        onSave(email)
+                        dismiss()
+                    }) {
+                        Text("Save")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill((!email.isEmpty && isValidEmail) ? Color.blue : Color.gray)
+                            )
+                    }
+                    .disabled(email.isEmpty || !isValidEmail)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+            }
+            .onAppear {
+                email = currentEmail
+            }
+        }
+    }
+
+    struct EditPasswordSheet: View {
+        let onSave: (String) -> Void
+        
+        @State private var newPassword: String = ""
+        @State private var confirmPassword: String = ""
+        @Environment(\.dismiss) private var dismiss
+        
+        var passwordsMatch: Bool {
+            !confirmPassword.isEmpty && newPassword == confirmPassword
+        }
+        
+        var isValidPassword: Bool {
+            newPassword.count >= 6
+        }
+        
+        var canSave: Bool {
+            isValidPassword && passwordsMatch
+        }
+        
+        var body: some View {
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 16) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 40, height: 6)
+                        .padding(.top, 12)
+                    
+                    Text("Reset Password")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .padding(.bottom, 8)
+                }
+                
+                // Content
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // New Password
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("New Password")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.secondary)
+                            
+                            SecureField("Enter new password", text: $newPassword)
+                                .font(.body)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray6))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(
+                                            newPassword.isEmpty ? Color.clear :
+                                            isValidPassword ? Color.blue.opacity(0.3) : Color.red.opacity(0.3),
+                                            lineWidth: 1
+                                        )
+                                )
+                            
+                            if !newPassword.isEmpty && !isValidPassword {
+                                Text("Password must be at least 6 characters")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        
+                        // Confirm Password
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Confirm Password")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.secondary)
+                            
+                            SecureField("Confirm new password", text: $confirmPassword)
+                                .font(.body)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray6))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(
+                                            confirmPassword.isEmpty ? Color.clear :
+                                            passwordsMatch ? Color.blue.opacity(0.3) : Color.red.opacity(0.3),
+                                            lineWidth: 1
+                                        )
+                                )
+                            
+                            if !confirmPassword.isEmpty && !passwordsMatch {
+                                Text("Passwords do not match")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    
+                    Button(action: {
+                        onSave(newPassword)
+                        dismiss()
+                    }) {
+                        Text("Save")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(canSave ? Color.blue : Color.gray)
+                            )
+                    }
+                    .disabled(!canSave)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+            }
+        }
+    }
+
+    struct QRCodeSheet: View {
+        let userEmail: String
+        
+        var body: some View {
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 16) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 40, height: 6)
+                        .padding(.top, 12)
+                    
+                    Text("My QR Code")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .padding(.bottom, 8)
+                }
+                
+                // Content
+                VStack(spacing: 24) {
+                    VStack(spacing: 16) {
+                        Text("Scan to Add Me!")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        QRCodeView(dataString: userEmail)
+                            .frame(width: 200, height: 200)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white)
+                                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                            )
+                        
+                        Text(userEmail)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.systemGray6))
+                            )
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+            }
+        }
     }
             
         

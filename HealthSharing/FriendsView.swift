@@ -12,6 +12,8 @@ import FirebaseAuth
 
 struct FriendsView: View {
     @State private var showAddFriend = false
+    @Environment(\.dismiss) private var dismiss
+    var showBackButton: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +24,17 @@ struct FriendsView: View {
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 HStack {
+                    if showBackButton {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.white)
+                                .font(.title2)
+                        }
+                    } else {
+                        // Empty space to maintain layout balance
+                        Spacer()
+                            .frame(width: 44) // Standard button width
+                    }
                     Spacer()
                     Button(action: { showAddFriend = true }) {
                         Image(systemName: "person.badge.plus")

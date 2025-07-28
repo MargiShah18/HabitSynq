@@ -96,7 +96,7 @@ struct AddHabitView: View {
                     }
                     
                     Section {
-                        NavigationLink(destination: ShareWithView()) {
+                        NavigationLink(destination: FriendsView(showBackButton: true)) {
                             HStack {
                                 Text("Share With")
                                 Spacer()
@@ -163,12 +163,7 @@ struct AddHabitView: View {
     }
 }
 
-struct ShareWithView: View {
-    var body: some View {
-        Text("Share with Friends")
-            .navigationTitle("Share With")
-    }
-}
+
 
 struct RemindersView: View {
     var body: some View {
